@@ -1,0 +1,22 @@
+{
+  "name": "pro-fitness-gym",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/member.test.mjs tests/database.test.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs",
+    "test:legacy": "node tests/check.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "build:local": "node --env-file=.env scripts/build.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.64.0",
+    "esbuild": "^0.28.2"
+  }
+}

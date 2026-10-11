@@ -1,0 +1,9 @@
+dist/
+node_modules/
+*.tar.gz
+*.zip
+.env
+.env.*
+!.env.example
+test-results/
+.publish/
