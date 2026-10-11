@@ -95,6 +95,10 @@ There is no website admin account or shared admin password. Gym administrators s
 
 For membership testing, an authorized administrator can set a test member's `membership_status` to `active` and set `valid_until` to an agreed future date. A newly registered member starts as `pending`.
 
+## Deploy on Vercel
+
+Follow [the Vercel and Supabase guide](docs/VERCEL_SUPABASE.md). Import `eruProg/progym`, add the two Supabase environment variables in Vercel, and deploy. The included `vercel.json` configures the static build and `dist` output. Update Supabase's Site URL and Redirect URLs to the actual Vercel production domain, then test confirmation and password-reset emails.
+
 ## Publish to GitHub Pages
 
 Follow [the step-by-step guide for eruProg/progym](docs/PUBLISH_PROGYM.md).
