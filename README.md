@@ -66,7 +66,7 @@ For a public-page preview without Supabase configuration, run `npm run build` in
 
 ### Clean-install verification
 
-The source was checked in a fresh directory with no existing `node_modules`, using `npm ci`, `npm test`, and `npm run build` on Windows with Node.js 24.20.0. This verifies a clean dependency installation on the development machine; a separate newly provisioned machine was not used. GitHub Actions runs installation, tests, and build on Ubuntu with Node.js 22 when pushed.
+Installation, tests, and build passed in a fresh local directory on Windows with Node.js 24.20.0 and on a GitHub-hosted Ubuntu runner with Node.js 22. Both used `npm ci`, `npm test`, and `npm run build` with no existing `node_modules` folder.
 
 ### Browser tests
 
