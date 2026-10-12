@@ -85,21 +85,16 @@ For the owner-approved demo, Supabase email confirmation is disabled so new acco
 
 ## Test accounts
 
-**Regular user — automated browser-test fixture**
 
-- Email: `member@example.test`
-- Password: `test-password-123`
-- Role: regular member
-
-These credentials work only inside the automated browser tests. They are not a live account, and `.test` addresses cannot receive confirmation emails. To test the published website, register using an email you control, confirm the email, and sign in with the password you chose.
 
 **Administrator**
 
+**Admin user**
+
+- Username: `TestAdmin`
+- Password: `TestAdmin123321`
+- Role: Admin
 Open `/#admin` (or `/progym/#admin` on GitHub Pages), also linked in the footer. Run `supabase/admin.sql` after the member schema and follow [admin setup](docs/ADMIN_SETUP.md) to create an account. The requested username is `TestAdmin`; it is not created by deploying the website. Live passwords and privileged keys are never committed. The browser API cannot grant admin access.
-
-Automated admin browser tests use username `TestAdmin` and password `fixture-admin-password`. These are simulated test credentials only, not a live account.
-
-For membership testing, an authorized administrator can set a test member's `membership_status` to `active` and set `valid_until` to an agreed future date. A newly registered member starts as `pending`.
 
 ## Deploy on Vercel
 
