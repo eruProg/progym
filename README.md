@@ -19,7 +19,7 @@ Gym information and member records can be scattered across posters, messages, an
 - **Access control:** members can access only their own profile and workouts. They cannot activate or extend their own membership.
 - **Responsive design:** layouts verified at desktop, tablet, and mobile widths.
 
-Membership payment and activation happen at the gym. Authorized staff manage membership status and expiry in the Supabase dashboard. A separate website admin dashboard and online payments are not implemented. Workout entries support create, read, and delete; there is no workout-edit form.
+Membership payment and activation happen at the gym. Authorized staff manage membership status and expiry in the Admin portal. The Admin portal provides a protected staff overview, member search, and membership editing. Online payments are not implemented. Workout entries support create, read, and delete; there is no workout-edit form.
 
 ## Tech stack
 
@@ -79,6 +79,10 @@ npm run test:browser
 
 Run these tests against `npm run build` output without Supabase environment variables. The tests inject a simulated backend to exercise authentication and dashboard flows without creating real accounts. Database tests execute the SQL schema and verify member isolation and protected membership fields using PGlite. Real email delivery must be checked against the configured Supabase project.
 
+## Demo configuration
+
+For the owner-approved demo, Supabase email confirmation is disabled so new accounts can sign in immediately. Resend is still restricted to its test sender: password-reset emails to other recipients will fail until an owned sending domain is verified. Restore confirmation for public use. See [email setup](docs/EMAIL_SETUP.md).
+
 ## Test accounts
 
 **Regular user — automated browser-test fixture**
@@ -91,7 +95,9 @@ These credentials work only inside the automated browser tests. They are not a l
 
 **Administrator**
 
-There is no website admin account or shared admin password. Gym administrators sign in to Supabase using their own authorized account and manage the `profiles` table there. Admin credentials are not stored in this repository. The member API cannot grant administrative access.
+Open `/#admin` (or `/progym/#admin` on GitHub Pages), also linked in the footer. Run `supabase/admin.sql` after the member schema and follow [admin setup](docs/ADMIN_SETUP.md) to create an account. The requested username is `TestAdmin`; it is not created by deploying the website. Live passwords and privileged keys are never committed. The browser API cannot grant admin access.
+
+Automated admin browser tests use username `TestAdmin` and password `fixture-admin-password`. These are simulated test credentials only, not a live account.
 
 For membership testing, an authorized administrator can set a test member's `membership_status` to `active` and set `valid_until` to an agreed future date. A newly registered member starts as `pending`.
 
@@ -119,14 +125,16 @@ Configure Supabase's Site URL and redirect allowlist with that exact address. Cu
 .github/workflows/deploy.yml  GitHub Pages deployment
 public/site.js               Website pages and interactions
 public/member-api.js         Authentication and member data access
+public/admin.js              Staff sign-in and member management
 public/content.js            Business content and validation
 public/site.css              Current website styling
 public/styles.css            Shared base styling
 public/images/               Supplied business images
 supabase/schema.sql          Database tables, trigger, and access rules
+supabase/admin.sql           Admin permissions and membership audit
 scripts/                     Build and local preview
 tests/                       Automated checks
 docs/                        Setup, deployment, and design notes
 ```
 
-The original prototype files in `public/` are retained for reference but are excluded from the build. Its sample members and staff controls are not part of the deployed application.
+The original prototype files in `public/` are retained for reference but are excluded from the build. Its sample members and prototype staff controls are excluded. The current staff portal uses real Supabase data.

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { validateWorkout } from './content.js';
+import { adminEmail } from './admin.js';
 
 export function createMemberAPI(url, key) {
   const client = url && key ? createClient(url, key, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}) : null;
@@ -14,8 +15,13 @@ export function createMemberAPI(url, key) {
       return unwrap(await requireClient().auth.signUp({email:email.trim(),password,options:{emailRedirectTo:redirect(),data:{full_name:name.trim(),home_branch:branch}}}));
     },
     async signIn({email,password}) { return unwrap(await requireClient().auth.signInWithPassword({email:email.trim(),password})); },
+    async signInAdmin({username,password}) {return unwrap(await requireClient().auth.signInWithPassword({email:adminEmail(username),password}));},
+    async isAdmin() {return unwrap(await requireClient().rpc('is_progym_admin'));},
+    async adminMembers(search='',status='all',offset=0) {return unwrap(await requireClient().rpc('admin_members',{p_search:search,p_status:status,p_offset:offset}));},
+    async adminUpdate(id,data) {unwrap(await requireClient().rpc('admin_update_membership',{p_member_id:id,p_name:data.name.trim(),p_branch:data.branch,p_status:data.status,p_expiry:data.expiry||null}));},
     async signOut() { unwrap(await requireClient().auth.signOut()); },
     async recover(email) {unwrap(await requireClient().auth.resetPasswordForEmail(email.trim(),{redirectTo:redirect()}));},
+    async resend(email) {unwrap(await requireClient().auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:redirect()}}));},
     async updatePassword(password) {unwrap(await requireClient().auth.updateUser({password}));},
     async load(userId) {
       const [profile,workouts] = await Promise.all([

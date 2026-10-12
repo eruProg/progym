@@ -2,9 +2,7 @@
 
 ## Administration
 
-This website currently has a member portal only. Authorized gym staff manage memberships in [the Supabase project](https://supabase.com/dashboard/project/iavtrbzholgceynvunmd).
-
-Use **Authentication → Users** to find an account's ID and email. Match that ID in **Table Editor → profiles**. After verifying payment, set `membership_status` to `active` and `valid_until` to the agreed expiry date. Members cannot change these fields. Do not share the Supabase owner's login with gym members. A separate website admin dashboard is not implemented.
+Use the footer **Admin portal** link or `/#admin` on Vercel. Follow [admin setup](ADMIN_SETUP.md) to install permissions and provision staff accounts. Members cannot change their own activation or expiry. Supabase Table Editor remains available to the project owner.
 
 ## Deploy on Vercel
 
@@ -41,6 +39,7 @@ Registration is ready for general members only after email confirmation, sign-in
 ## If something fails
 
 - **Online member access is coming soon:** verify both Vercel environment variables and redeploy.
+- **Error sending confirmation email:** open Logs, select Auth, and read the latest `/signup` error. If Resend says “You can only send testing emails to your own email address,” verify an owned domain in Resend and change Supabase’s sender email to that domain. The `resend.dev` test sender cannot deliver to general members. See [email troubleshooting](EMAIL_SETUP.md).
 - **Email address not authorized / no confirmation email:** configure custom SMTP, inspect its delivery logs, and check spam.
 - **Confirmation returns to the wrong website:** check Site URL, allowed Redirect URLs, and the domain used to request the email. Request a new email after correcting the settings.
 - **Member profile not available:** verify the SQL schema and `on_member_signup` trigger were installed. Do not grant anonymous access to private tables.

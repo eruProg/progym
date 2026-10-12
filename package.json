@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/member.test.mjs tests/database.test.mjs",
+    "test": "node --test tests/member.test.mjs tests/database.test.mjs tests/admin.test.mjs",
     "build": "node scripts/build.mjs",
     "preview": "node scripts/preview.mjs",
     "test:legacy": "node tests/check.mjs",
     "test:browser": "node tests/browser.mjs",
-    "build:local": "node --env-file=.env scripts/build.mjs"
+    "build:local": "node --env-file=.env scripts/build.mjs",
+    "admin:create": "node --env-file=.env scripts/create-admin.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3"

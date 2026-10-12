@@ -11,7 +11,7 @@ const errors=[];page.on('pageerror',error=>errors.push(error.message));
 try {
   for(const width of [1440,768,390,320]){
     await page.setViewportSize({width,height:900});
-    for(const route of ['home','plans','coaches','coach/domz','coach/paul','schedule','careers','signup','member','forgot']){
+    for(const route of ['home','plans','coaches','coach/domz','coach/paul','schedule','careers','signup','member','forgot','resend','admin']){
       await page.goto(base+'#'+route);await page.locator('main h1').waitFor();
       assert.equal(await page.locator('main h1').count(),1,route);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${route} overflows at ${width}`);
@@ -31,14 +31,18 @@ try {
   const jwt=[{alg:'HS256',typ:'JWT'},{sub:id,role:'authenticated',aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600},'fixture'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
   const session={access_token:jwt,refresh_token:'fixture-refresh',token_type:'bearer',expires_in:3600,user};
   let profile={id,full_name:'Test Member',home_branch:'Cainta',membership_status:'pending',valid_until:null,created_at:new Date().toISOString()};
-  let workouts=[],signups=0,recoveries=0,passwordUpdates=0;
+  let workouts=[],signups=0,recoveries=0,passwordUpdates=0,resends=0,emailFail=false,isAdmin=false,adminReads=0,adminWrites=0;
   await member.route('**/site.bundle.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));
   await member.route('https://fitness-test.supabase.co/**',async r=>{
     const req=r.request(),url=new URL(req.url()),method=req.method(),data=req.postDataJSON();
     let result={},status=200;
-    if(url.pathname==='/auth/v1/signup'){signups++;result={user,session:null};}
-    else if(url.pathname==='/auth/v1/token'){if(data.password==='wrong-password'){status=400;result={msg:'Invalid login credentials',error_code:'invalid_credentials'};}else result=session;}
+    if(url.pathname==='/auth/v1/signup'){signups++;if(emailFail){status=500;result={msg:'Error sending confirmation email',error_code:'unexpected_failure'};}else result={user,session:null};}
+    else if(url.pathname==='/auth/v1/token'){if(data.password==='wrong-password'){status=400;result={msg:'Invalid login credentials',error_code:'invalid_credentials'};}else {isAdmin=data.email==='testadmin@admin.progym.invalid';result=session;}}
     else if(url.pathname==='/auth/v1/user'){if(method==='PUT')passwordUpdates++;result=user;}
+    else if(url.pathname==='/auth/v1/resend'){resends++;}
+    else if(url.pathname==='/rest/v1/rpc/is_progym_admin')result=isAdmin;
+    else if(url.pathname==='/rest/v1/rpc/admin_members'){assert.ok(isAdmin);adminReads++;result={members:[{...profile,email:user.email}],total:1,stats:{total:1,active:0,pending:1},renewals:[]};}
+    else if(url.pathname==='/rest/v1/rpc/admin_update_membership'){assert.ok(isAdmin);adminWrites++;profile={...profile,full_name:data.p_name,membership_status:data.p_status,valid_until:data.p_expiry};}
     else if(url.pathname==='/auth/v1/recover'){recoveries++;}
     else if(url.pathname==='/auth/v1/logout')result={};
     else if(url.pathname==='/rest/v1/profiles'){
@@ -116,6 +120,49 @@ try {
   await member.getByRole('button',{name:'Save new password'}).click();
   await member.getByRole('heading',{name:'Hi, Updated.'}).waitFor();
   assert.equal(passwordUpdates,2);
+  // A regular member cannot enter the staff workspace.
+  await member.goto(base+'#admin');
+  await member.getByRole('heading',{name:'Admin access required.'}).waitFor();assert.equal(adminReads,0);
+  await member.getByRole('button',{name:'Use an admin account'}).click();
+  await member.getByRole('heading',{name:'Admin sign in.'}).waitFor();
+  await member.getByLabel('Username',{exact:true}).fill('TestAdmin');
+  await member.getByLabel('Password',{exact:true}).fill('fixture-admin-password');
+  await member.getByRole('button',{name:'Sign in',exact:false}).click();
+  await member.getByRole('heading',{name:'Overview',exact:true}).waitFor();
+  await member.getByText('No renewals due in the next seven days.').waitFor();
+  for(const width of [1440,768,390,320]){
+    await member.setViewportSize({width,height:900});
+    for(const tab of ['overview','members','account']){
+      await member.goto(base+'#admin/'+tab);
+      await member.locator('.staff-main').waitFor();
+      assert.ok(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'admin '+tab+' overflow '+width+' '+JSON.stringify(await member.evaluate(()=>[...document.querySelectorAll('main *')].filter(el=>el.getBoundingClientRect().right>innerWidth).map(el=>({tag:el.tagName,cls:el.className,width:el.getBoundingClientRect().width,right:el.getBoundingClientRect().right})))));
+      if(tab==='overview'&&[1440,390].includes(width))await member.screenshot({path:new URL('admin-'+width+'.png',output).pathname.slice(process.platform==='win32'?1:0),fullPage:true});
+    }
+  }
+  await member.goto(base+'#admin/members');
+  await member.getByRole('button',{name:'Edit Updated Member'}).click();
+  await member.getByLabel('Full name',{exact:true}).fill('Staff Updated');
+  await member.locator('dialog select[name="status"]').selectOption('active');
+  await member.getByLabel('Valid until',{exact:true}).fill('2099-01-01');
+  await member.getByRole('button',{name:'Save membership'}).click();
+  await member.getByRole('button',{name:'Edit Staff Updated'}).waitFor();assert.equal(adminWrites,1);
+  await member.getByRole('searchbox',{name:'Search members'}).fill('Staff');
+  await member.getByRole('button',{name:'Search',exact:true}).click();
+  await member.getByRole('button',{name:'Sign out',exact:true}).click();
+  await member.getByRole('heading',{name:'Admin sign in.'}).waitFor();
+  assert.ok(!(await member.locator('main').innerText()).includes('Staff Updated'));
+  await member.goto(base+'#signup');emailFail=true;
+  await member.getByLabel('Full name',{exact:true}).fill('Test Member');
+  await member.getByLabel('Email address',{exact:true}).fill(user.email);
+  await member.getByLabel('Password',{exact:true}).fill('test-password-123');
+  await member.getByLabel('Confirm password',{exact:true}).fill('test-password-123');
+  await member.getByRole('button',{name:'Create account'}).click();
+  await member.getByText(/We could not send your email/).waitFor();
+  await member.getByRole('link',{name:'Resend confirmation email',exact:true}).click();
+  await member.getByLabel('Email address',{exact:true}).fill(user.email);
+  await member.getByRole('button',{name:'Resend confirmation'}).click();
+  await member.getByText(/a new link has been requested/).waitFor();assert.equal(resends,1);
+  console.log('PASS SMTP failure feedback, confirmation resend, regular-member admin denial, username login, responsive staff screens, membership editing and staff sign-out (mocked API).');
   assert.deepEqual(errors,[]);
   console.log('PASS signup confirmation, mismatch validation, failed login, sign-in, private dashboard, refresh, workout creation/deletion, profile editing, password reset, sign-out and responsive member screens (mocked API).');
   await context.close();
